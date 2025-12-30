@@ -1,0 +1,3 @@
+{"id":"qa_01","task":"qa","input":"Who discovered penicillin and in which year?","reference":"Alexander Fleming discovered penicillin in 1928.","difficulty":"easy"}
+{"id":"qa_02","task":"qa","input":"What is the capital of Australia?","reference":"The capital of Australia is Canberra.","difficulty":"easy"}
+{"id":"qa_03","task":"qa","input":"Which planet is known as the Red Planet and why?","reference":"Mars is known as the Red Planet because of iron oxide on its surface.","difficulty":"medium"}

@@ -1,0 +1,1 @@
+{"id":"reason_01","task":"reasoning","input":"If all roses are flowers and some flowers fade quickly, can we conclude that some roses fade quickly?","reference":"No, we cannot conclude that because we do not know if the roses are among the flowers that fade quickly.","difficulty":"medium"}
