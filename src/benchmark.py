@@ -1,26 +1,64 @@
-from models import load_model
+import json
 import time
+from pathlib import Path
+from models import load_model
+from prompts import QA_PROMPT
 
-def test_single_prompt():
-    print("Loading model...")
+DATA_PATH = Path("data/qa.jsonl")
+OUTPUT_PATH = Path("results/raw_outputs.jsonl")
+
+def load_dataset(path: Path):
+    # for loading the dataset into list of dictionaries
+    examples=[]
+
+    with open(path,"r") as f:
+        for line in f:
+            examples.append(json.loads(line))
+    return examples
+
+def run_qa_benchmark():
+    print("laoding model....")
     model = load_model("models/mistral.gguf")
 
-    prompt = "Answer concisely: What is the capital of France?"
+    print("Loading QA Dataset")
+    dataset = load_dataset(DATA_PATH)
 
-    print("Running inference...")
-    start = time.time()
+    OUTPUT_PATH.parent.mkdir(exist_ok=True)
 
-    output = model(
-        prompt,
-        max_tokens=50,
-        stop=["\n"]
-    )
+    print(f"Running QA benchmark on {len(dataset)}")
 
-    end = time.time()
+    with open(OUTPUT_PATH,"w") as out_f:
+        for example in dataset:
+            prompt= QA_PROMPT.format(input=example["input"])
 
-    print("\nMODEL OUTPUT:")
-    print(output["choices"][0]["text"].strip())
-    print(f"\nLatency: {end - start:.2f} seconds")
+            start = time.time()
 
-if __name__ == "__main__":
-    test_single_prompt()
+            output = model(
+                prompt,
+                max_tokens=128,
+                temperature=0.0
+            )
+            latency = time.time()- start
+
+            response_text = output["choices"][0]["text"].strip()
+            token_count= len(response_text.split())
+
+            record = {
+                "model": "mistral",
+                "task": "qa",
+                "id": example["id"],
+                "input": example["input"],
+                "reference": example["reference"],
+                "output": response_text,
+                "latency_sec": round(latency, 2),
+                "output_tokens": token_count
+            }
+
+            out_f.write(json.dumps(record) + "\n")
+
+            print(f"[{example['id']}] {latency:.2f}s")
+
+if __name__=="__main__":
+    run_qa_benchmark()
+
+
