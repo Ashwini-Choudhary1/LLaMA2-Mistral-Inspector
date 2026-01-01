@@ -18,7 +18,7 @@ def load_dataset(path: Path):
 
 def run_qa_benchmark():
     print("laoding model....")
-    model = load_model("models/mistral.gguf")
+    model = load_model("models/llama2.gguf")
 
     print("Loading QA Dataset")
     dataset = load_dataset(DATA_PATH)
@@ -27,7 +27,7 @@ def run_qa_benchmark():
 
     print(f"Running QA benchmark on {len(dataset)}")
 
-    with open(OUTPUT_PATH,"w") as out_f:
+    with open(OUTPUT_PATH,"a") as out_f:
         for example in dataset:
             prompt= QA_PROMPT.format(input=example["input"])
 
@@ -44,7 +44,7 @@ def run_qa_benchmark():
             token_count= len(response_text.split())
 
             record = {
-                "model": "mistral",
+                "model": "Llama2",
                 "task": "qa",
                 "id": example["id"],
                 "input": example["input"],

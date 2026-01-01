@@ -1,0 +1,7 @@
+model,task,id,latency_sec,output_tokens,correct
+mistral,qa,qa_01,123.55,8,True
+mistral,qa,qa_02,136.93,15,True
+mistral,qa,qa_03,219.55,24,True
+Llama2,qa,qa_01,474.25,50,True
+Llama2,qa,qa_02,54.02,6,True
+Llama2,qa,qa_03,224.88,29,True
