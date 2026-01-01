@@ -2,6 +2,7 @@ import json
 import csv
 import re
 from pathlib import Path
+from collections import defaultdict
 
 
 RAW_OUTPUTS_PATH = Path("results/raw_outputs.jsonl")
@@ -15,33 +16,37 @@ def normalize(text: str) -> str:
     return text
 
 
+def token_overlap(a: str, b: str) -> float:
+    a_tokens = set(a.split())
+    b_tokens = set(b.split())
+    if not a_tokens:
+        return 0.0
+    return len(a_tokens & b_tokens) / len(a_tokens)
+
+
 def evaluate_qa(output: str, reference: str) -> bool:
-    output_norm = normalize(output)
-    reference_norm = normalize(reference)
-
-    ref_tokens = reference_norm.split()
-    overlap = sum(token in output_norm for token in ref_tokens) / len(ref_tokens)
-
-    return overlap >= 0.6
+    output_n = normalize(output)
+    reference_n = normalize(reference)
+    return token_overlap(reference_n, output_n) >= 0.6
 
 
 def extract_yes_no(text: str):
-    text = text.lower()
-    if text.strip().startswith("yes"):
+    text = text.lower().strip()
+    if text.startswith("yes"):
         return "yes"
-    if text.strip().startswith("no"):
+    if text.startswith("no"):
         return "no"
     return None
 
 
 def evaluate_reasoning(output: str, reference: str) -> bool:
-    output_answer = extract_yes_no(output)
-    reference_answer = extract_yes_no(reference)
+    return extract_yes_no(output) == extract_yes_no(reference)
 
-    if output_answer is None or reference_answer is None:
-        return False
 
-    return output_answer == reference_answer
+def evaluate_summarization(output: str, reference: str) -> bool:
+    output_n = normalize(output)
+    reference_n = normalize(reference)
+    return token_overlap(reference_n, output_n) >= 0.5
 
 
 def evaluate_outputs():
@@ -52,16 +57,13 @@ def evaluate_outputs():
             record = json.loads(line)
 
             if record["task"] == "qa":
-                correct = evaluate_qa(
-                    output=record["output"],
-                    reference=record["reference"]
-                )
+                correct = evaluate_qa(record["output"], record["reference"])
 
             elif record["task"] == "reasoning":
-                correct = evaluate_reasoning(
-                    output=record["output"],
-                    reference=record["reference"]
-                )
+                correct = evaluate_reasoning(record["output"], record["reference"])
+
+            elif record["task"] == "summarization":
+                correct = evaluate_summarization(record["output"], record["reference"])
 
             else:
                 continue
@@ -101,8 +103,6 @@ def write_summary_csv(results):
 
 
 def print_metrics(results):
-    from collections import defaultdict
-
     grouped = defaultdict(list)
     for r in results:
         grouped[(r["model"], r["task"])].append(r)
