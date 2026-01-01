@@ -9,41 +9,64 @@ BENCHMARK_RESULTS_PATH = Path("results/benchmark_results.csv")
 
 
 def normalize(text: str) -> str:
-    
-    # Normalize text for comparison:
-    #lowercase
-    #removed punctuation
-    #normalized whitespace
-    
     text = text.lower()
     text = re.sub(r"[^a-z0-9\s]", "", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
 
-def is_correct(output: str, reference: str) -> bool:
-    
-    norm_output = normalize(output)
-    norm_reference = normalize(reference)
+def evaluate_qa(output: str, reference: str) -> bool:
+    output_norm = normalize(output)
+    reference_norm = normalize(reference)
 
-    ref_tokens = norm_reference.split()
-    matched_tokens = sum(token in norm_output for token in ref_tokens)
+    ref_tokens = reference_norm.split()
+    overlap = sum(token in output_norm for token in ref_tokens) / len(ref_tokens)
 
-    return (matched_tokens / len(ref_tokens)) >= 0.6
+    return overlap >= 0.6
 
 
-def evaluate_qa_outputs():
+def extract_yes_no(text: str):
+    text = text.lower()
+    if text.strip().startswith("yes"):
+        return "yes"
+    if text.strip().startswith("no"):
+        return "no"
+    return None
+
+
+def evaluate_reasoning(output: str, reference: str) -> bool:
+    output_answer = extract_yes_no(output)
+    reference_answer = extract_yes_no(reference)
+
+    if output_answer is None or reference_answer is None:
+        return False
+
+    return output_answer == reference_answer
+
+
+def evaluate_outputs():
     results = []
 
     with open(RAW_OUTPUTS_PATH, "r") as f:
         for line in f:
             record = json.loads(line)
 
-            record["correct"] = is_correct(
-                output=record["output"],
-                reference=record["reference"]
-            )
+            if record["task"] == "qa":
+                correct = evaluate_qa(
+                    output=record["output"],
+                    reference=record["reference"]
+                )
 
+            elif record["task"] == "reasoning":
+                correct = evaluate_reasoning(
+                    output=record["output"],
+                    reference=record["reference"]
+                )
+
+            else:
+                continue
+
+            record["correct"] = correct
             results.append(record)
 
     return results
@@ -66,7 +89,6 @@ def write_summary_csv(results):
         )
 
         writer.writeheader()
-
         for r in results:
             writer.writerow({
                 "model": r["model"],
@@ -79,21 +101,19 @@ def write_summary_csv(results):
 
 
 def print_metrics(results):
-    total = len(results)
-    correct = sum(1 for r in results if r["correct"])
+    from collections import defaultdict
 
-    accuracy = correct / total if total > 0 else 0
-    avg_latency = sum(r["latency_sec"] for r in results) / total
-    avg_tokens = sum(r["output_tokens"] for r in results) / total
+    grouped = defaultdict(list)
+    for r in results:
+        grouped[(r["model"], r["task"])].append(r)
 
-    print("\n--- QA Evaluation Summary ---")
-    print(f"Total examples : {total}")
-    print(f"Accuracy       : {accuracy:.2%}")
-    print(f"Avg latency    : {avg_latency:.2f}s")
-    print(f"Avg tokens     : {avg_tokens:.2f}")
+    print("\n--- Evaluation Summary ---")
+    for (model, task), rows in grouped.items():
+        accuracy = sum(r["correct"] for r in rows) / len(rows)
+        print(f"{model} | {task} | Accuracy: {accuracy:.2%}")
 
 
 if __name__ == "__main__":
-    results = evaluate_qa_outputs()
+    results = evaluate_outputs()
     write_summary_csv(results)
     print_metrics(results)

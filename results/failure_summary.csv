@@ -1,1 +1,20 @@
 model,task,id,failure_type,output,reference
+mistral,reasoning,reason_01,invalid_logical_inference,"Yes, we can conclude that some roses fade quickly based on the given information.
+
+Explanation:
+1. All roses are flowers.
+2. Some flowers fade quickly.
+3. Since roses are a type of flower, it follows that some roses fall under the category of ""some flowers"" that fade quickly.","No, we cannot conclude that because we do not know if the roses are among the flowers that fade quickly."
+Llama2,reasoning,reason_01,invalid_logical_inference,"Yes, we can conclude that some roses fade quickly.
+
+Explanation:
+The problem is based on a logical reasoning, where we are given two premises:
+
+1. All roses are flowers.
+2. Some flowers fade quickly.
+
+From these premises, we can logically deduce that some roses fade quickly. The reasoning is as follows:
+
+1. All roses are flowers (premise 1).
+2. Some flowers fade quickly (premise 2).
+3. Since roses are flowers, they must be some of the flowers that fade","No, we cannot conclude that because we do not know if the roses are among the flowers that fade quickly."

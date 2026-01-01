@@ -2,9 +2,9 @@ import json
 import time
 from pathlib import Path
 from models import load_model
-from prompts import QA_PROMPT
+from prompts import REASONING_PROMPT
 
-DATA_PATH = Path("data/qa.jsonl")
+DATA_PATH = Path("data/reasoning.jsonl")
 OUTPUT_PATH = Path("results/raw_outputs.jsonl")
 
 def load_dataset(path: Path):
@@ -17,19 +17,19 @@ def load_dataset(path: Path):
     return examples
 
 def run_qa_benchmark():
-    print("laoding model....")
+    print("loading model....")
     model = load_model("models/llama2.gguf")
 
-    print("Loading QA Dataset")
+    print("Loading Reasoning Dataset")
     dataset = load_dataset(DATA_PATH)
 
     OUTPUT_PATH.parent.mkdir(exist_ok=True)
 
-    print(f"Running QA benchmark on {len(dataset)}")
+    print(f"Running Reasoning benchmark on {len(dataset)}")
 
     with open(OUTPUT_PATH,"a") as out_f:
         for example in dataset:
-            prompt= QA_PROMPT.format(input=example["input"])
+            prompt= REASONING_PROMPT.format(input=example["input"])
 
             start = time.time()
 
@@ -45,7 +45,7 @@ def run_qa_benchmark():
 
             record = {
                 "model": "Llama2",
-                "task": "qa",
+                "task": "reasoning",
                 "id": example["id"],
                 "input": example["input"],
                 "reference": example["reference"],

@@ -7,7 +7,16 @@ RAW_OUTPUTS_PATH = Path("results/raw_outputs.jsonl")
 FAILURE_SUMMARY_PATH = Path("results/failure_summary.csv")
 
 
-def classify_failure(output: str, reference: str) -> str:
+def extract_yes_no(text: str):
+    text = text.lower().strip()
+    if text.startswith("yes"):
+        return "yes"
+    if text.startswith("no"):
+        return "no"
+    return None
+
+
+def classify_qa_failure(output: str, reference: str) -> str:
     output_lower = output.lower()
     reference_lower = reference.lower()
 
@@ -34,6 +43,19 @@ def classify_failure(output: str, reference: str) -> str:
     return "overconfident_wrong"
 
 
+def classify_reasoning_failure(output: str, reference: str) -> str:
+    output_answer = extract_yes_no(output)
+    reference_answer = extract_yes_no(reference)
+
+    if output_answer is None or reference_answer is None:
+        return "unverifiable_reasoning"
+
+    if output_answer != reference_answer:
+        return "invalid_logical_inference"
+
+    return "correct"
+
+
 def analyze_failures():
     failures = []
 
@@ -41,20 +63,37 @@ def analyze_failures():
         for line in f:
             record = json.loads(line)
 
-            failure_type = classify_failure(
-                output=record["output"],
-                reference=record["reference"]
-            )
+            if record["task"] == "qa":
+                failure_type = classify_qa_failure(
+                    output=record["output"],
+                    reference=record["reference"]
+                )
 
-            if failure_type not in ["correct", "over_verbose_correct"]:
-                failures.append({
-                    "model": record["model"],
-                    "task": record["task"],
-                    "id": record["id"],
-                    "failure_type": failure_type,
-                    "output": record["output"],
-                    "reference": record["reference"]
-                })
+                if failure_type not in ["correct", "over_verbose_correct"]:
+                    failures.append({
+                        "model": record["model"],
+                        "task": record["task"],
+                        "id": record["id"],
+                        "failure_type": failure_type,
+                        "output": record["output"],
+                        "reference": record["reference"]
+                    })
+
+            elif record["task"] == "reasoning":
+                failure_type = classify_reasoning_failure(
+                    output=record["output"],
+                    reference=record["reference"]
+                )
+
+                if failure_type != "correct":
+                    failures.append({
+                        "model": record["model"],
+                        "task": record["task"],
+                        "id": record["id"],
+                        "failure_type": failure_type,
+                        "output": record["output"],
+                        "reference": record["reference"]
+                    })
 
     return failures
 
