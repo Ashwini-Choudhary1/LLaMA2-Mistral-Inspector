@@ -2,9 +2,9 @@ import json
 import time
 from pathlib import Path
 from models import load_model
-from prompts import SUMMARIZATION_PROMPT
+from prompts import REASONING_PROMPT #changeable parameter
 
-DATA_PATH = Path("data/summarization.jsonl")
+DATA_PATH = Path("data/reasoning.jsonl") #changeable parameter
 OUTPUT_PATH = Path("results/raw_outputs.jsonl")
 
 def load_dataset(path: Path):
@@ -18,25 +18,30 @@ def load_dataset(path: Path):
 
 def run_qa_benchmark():
     print("loading model....")
-    model = load_model("models/llama2.gguf")
+    model = load_model("models/llama2.gguf") #changeable parameter
 
-    print("Loading summarization Dataset")
+    print("Loading Dataset")
     dataset = load_dataset(DATA_PATH)
 
     OUTPUT_PATH.parent.mkdir(exist_ok=True)
 
-    print(f"Running summarization benchmark on {len(dataset)}")
+    print(f"Running benchmark on {len(dataset)}")
+    TEMPERATURE = 0.2 #changeable parameter
+    TOP_P = 0.9 #changeable parameter
+    MAX_NEW_TOKENS = 128 #changeable parameter
+
 
     with open(OUTPUT_PATH,"a") as out_f:
         for example in dataset:
-            prompt= SUMMARIZATION_PROMPT.format(input=example["input"])
+            prompt= REASONING_PROMPT.format(input=example["input"])
 
             start = time.time()
 
             output = model(
                 prompt,
-                max_tokens=128,
-                temperature=0.7
+                max_tokens=MAX_NEW_TOKENS,
+                temperature=TEMPERATURE,
+                top_p=TOP_P
             )
             latency = time.time()- start
 
@@ -44,15 +49,19 @@ def run_qa_benchmark():
             token_count= len(response_text.split())
 
             record = {
-                "model": "Llama2",
-                "task": "summarization",
-                "id": example["id"],
-                "input": example["input"],
-                "reference": example["reference"],
-                "output": response_text,
-                "latency_sec": round(latency, 2),
-                "output_tokens": token_count
+            "model": "Llama2", #changeable parameter
+            "task": "reasoning",       #changeable parameter
+            "id": example["id"],
+            "input": example["input"],
+            "reference": example["reference"],
+            "output": response_text,
+            "latency_sec": round(latency, 2),
+            "output_tokens": token_count,
+            "temperature": TEMPERATURE,
+            "top_p": TOP_P,
+            "max_new_tokens": MAX_NEW_TOKENS
             }
+
 
             out_f.write(json.dumps(record) + "\n")
 
