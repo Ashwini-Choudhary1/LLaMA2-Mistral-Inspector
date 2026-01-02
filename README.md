@@ -1,4 +1,4 @@
-# LLaMA2-Mistral-Inspector
+# LLaMA2-Mistral-Inspector (Apple Silicon M1)
 
 Task-aware benchmarking and failure analysis of large language models, with a
 focus on comparing **Mistral** and **LLaMA-2** under identical constraints.
