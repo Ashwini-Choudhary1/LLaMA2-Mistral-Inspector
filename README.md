@@ -1,4 +1,4 @@
-# LLM Benchmarking and Failure Analysis
+# LLM Benchmarking and Failure Analysis (Apple Silicon M1)
 
 This project benchmarks and compares LLMs (Mistral, LLaMA-2) on:
 - QA
@@ -11,3 +11,4 @@ It includes:
 - CPU-only inference using llama.cpp
 
 More features coming.
+
