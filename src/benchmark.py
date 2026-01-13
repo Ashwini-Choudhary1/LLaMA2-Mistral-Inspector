@@ -26,7 +26,7 @@ def run_qa_benchmark():
     OUTPUT_PATH.parent.mkdir(exist_ok=True)
 
     print(f"Running benchmark on {len(dataset)}")
-    TEMPERATURE = 0.2 #changeable parameter
+    TEMPERATURE = 0.5 #changeable parameter
     TOP_P = 0.9 #changeable parameter
     MAX_NEW_TOKENS = 128 #changeable parameter
 

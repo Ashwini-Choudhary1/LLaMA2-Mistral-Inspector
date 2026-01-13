@@ -7,6 +7,7 @@ mistral,qa,qa_03,226.33,24,True
 Llama2,qa,qa_01,591.2,58,True
 Llama2,qa,qa_02,60.41,6,True
 Llama2,qa,qa_03,326.37,38,True
-mistral,reasoning,qa_01,863.77,88,True
 mistral,reasoning,reason_01,665.75,65,False
 Llama2,reasoning,reason_01,809.89,83,False
+mistral,reasoning,reason_01,606.29,49,False
+Llama2,reasoning,reason_01,759.08,72,False
