@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLaMA2-Mistral-Inspector</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: rgba(255, 255, 255, 0.03);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #818cf8, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .panel:hover {
+            border-color: rgba(255,255,255,0.15);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        select, textarea {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, textarea:focus {
+            border-color: var(--accent);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Results Area */
+        #results {
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .metric-title {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge.correct { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge.error { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+        .badge.warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+
+        .output-box {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            white-space: pre-wrap;
+            line-height: 1.6;
+            font-family: monospace;
+            color: #e2e8f0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Inspector Engine</h1>
+        <p class="subtitle">Task-Aware Benchmarking & Failure Taxonomy</p>
+    </header>
+
+    <div class="container">
+        <!-- Input Panel -->
+        <div class="panel">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="model">Model</label>
+                    <select id="model">
+                        <option value="llama2">LLaMA-2 (7B)</option>
+                        <option value="mistral">Mistral (7B)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="task">Task Dimension</label>
+                    <select id="task">
+                        <option value="qa">Question Answering</option>
+                        <option value="reasoning">Logical Reasoning</option>
+                        <option value="summarization">Text Summarization</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="input-text">Input Prompt</label>
+                <textarea id="input-text" placeholder="Enter the text to evaluate (e.g., a question, a syllogism, or an article)"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="reference-text">Reference Answer (Ground Truth)</label>
+                <textarea id="reference-text" placeholder="Enter the exact answer expected for evaluation..."></textarea>
+            </div>
+
+            <button id="run-btn" onclick="runEvaluation()">
+                <span>Generate & Evaluate</span>
+                <div class="spinner" id="spinner"></div>
+            </button>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="panel" id="results">
+            <h3 style="margin-bottom: 1rem; color: var(--text-secondary);">Evaluation Results</h3>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">Latency</div>
+                    <div class="metric-value" id="res-latency">- s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Accuracy</div>
+                    <div class="metric-value" id="res-accuracy">
+                        <span class="badge" id="badge-accuracy">N/A</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Failure Taxonomy</div>
+                    <div class="metric-value">
+                        <span class="badge" id="badge-taxonomy">N/A</span>
+                    </div>
+                </div>
+            </div>
+
+            <label>Raw Output Generated</label>
+            <div class="output-box" id="res-output"></div>
+        </div>
+    </div>
+
+    <script>
+        async function runEvaluation() {
+            const btn = document.getElementById('run-btn');
+            const spinner = document.getElementById('spinner');
+            const btnText = btn.querySelector('span');
+            const resultsPanel = document.getElementById('results');
+            
+            const req = {
+                model_name: document.getElementById('model').value,
+                task_name: document.getElementById('task').value,
+                input_text: document.getElementById('input-text').value,
+                reference_text: document.getElementById('reference-text').value
+            };
+
+            if (!req.input_text || !req.reference_text) {
+                alert("Please provide both Input Prompt and Reference Answer.");
+                return;
+            }
+
+            // UI State loading
+            btn.disabled = true;
+            spinner.style.display = 'block';
+            btnText.textContent = 'Processing...';
+            resultsPanel.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/evaluate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(req)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Populate results
+                document.getElementById('res-latency').textContent = `${data.latency_sec} s`;
+                document.getElementById('res-output').textContent = data.output;
+                
+                const accBadge = document.getElementById('badge-accuracy');
+                if (data.correct) {
+                    accBadge.textContent = 'PASS';
+                    accBadge.className = 'badge correct';
+                } else {
+                    accBadge.textContent = 'FAIL';
+                    accBadge.className = 'badge error';
+                }
+
+                const taxBadge = document.getElementById('badge-taxonomy');
+                taxBadge.textContent = data.failure_type.replace(/_/g, ' ');
+                
+                if (data.failure_type === 'correct') {
+                    taxBadge.className = 'badge correct';
+                } else if (data.failure_type.includes('verbose')) {
+                    taxBadge.className = 'badge warning';
+                } else {
+                    taxBadge.className = 'badge error';
+                }
+
+                resultsPanel.style.display = 'block';
+
+            } catch (error) {
+                console.error('Evaluation Error:', error);
+                alert("An error occurred during evaluation. Please check the console.");
+            } finally {
+                // Restore UI state
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.textContent = 'Generate & Evaluate';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -17,9 +17,10 @@ A deterministic, task-aware evaluation harness and interpretable failure analysi
 
 Standard LLM leaderboards rely on aggregate, surface-level scores that obscure critical failure modes, token inefficiencies, and systematic reasoning breakdowns. **LLaMA2-Mistral-Inspector** bridges the gap between raw quantitative benchmarking and qualitative behavioral diagnosis by introducing an automated **Failure Taxonomy Engine** (`src/failure_analysis.py`).
 
-By executing multi-task evaluations under strict hardware and prompt boundaries, the pipeline isolates exact latency overhead, output token verbosity, and specific error classes across different architectural designs.
+By executing multi-task evaluations under strict hardware and prompt boundaries, the pipeline isolates exact latency overhead, output token verbosity, and specific error classes across different architectural designs. This is now fully interactive through a **FastAPI Web UI**.
 
 ### Key Architectural & Analytical Features
+* **Interactive Testing Web UI (`api/main.py`)**: A premium HTML/JS/CSS frontend served by FastAPI to interactively test prompts, evaluate latencies, and instantly visualize failure taxonomies.
 * **Task-Aware Evaluation Harness (`src/benchmark.py`)**: Evaluates open-source models across three distinct cognitive dimensions:
   * **Question Answering (`QA`)**: Factual extraction and semantic precision.
   * **Logical Reasoning (`reasoning`)**: Syllogistic deduction and premise validation.
@@ -40,7 +41,13 @@ By executing multi-task evaluations under strict hardware and prompt boundaries,
                                             │
                                             ▼
                               [src/prompts.py & benchmark.py]
-                               Task-Specific Prompt Formatting
+                 Task-Specific Prompt Formatting & Dynamic Configuration
+                                            │
+                                            ▼
+    ┌───────────────────────────────────────────────────────────────────────────────┐
+    │                        [api/main.py] FastAPI Backend                          │
+    │   Real-time Interactive UI for Prompt Evaluation & Taxonomy Visualization     │
+    └───────────────────────────────────────┬───────────────────────────────────────┘
                                             │
                                             ▼
                                [src/models.py (llama.cpp)]
@@ -69,7 +76,9 @@ By executing multi-task evaluations under strict hardware and prompt boundaries,
 ```
 LLaMA2-Mistral-Inspector/
 ├── api/
-│   └── main.py                     # API wrapper interface for evaluation endpoints
+│   ├── main.py                     # FastAPI backend serving the interactive evaluation UI
+│   └── static/
+│       └── index.html              # Premium HTML/JS/CSS frontend interface
 ├── data/
 │   ├── qa.jsonl                    # Factual question answering benchmark dataset
 │   ├── reasoning.jsonl             # Logical syllogism and inference verification dataset
@@ -80,13 +89,13 @@ LLaMA2-Mistral-Inspector/
 │   ├── benchmark_results.csv       # Aggregated metric evaluation table per model and task
 │   └── failure_summary.csv         # Categorized failure log detailing exact breakdown reasons
 ├── src/
-│   ├── config.py                   # Centralized configuration parameters and path management
+│   ├── config.py                   # Centralized configuration parameters and dynamic task mapping
 │   ├── models.py                   # llama.cpp wrapper managing thread allocation and context limits
 │   ├── prompts.py                  # Structured task prompt templates ensuring zero bias
-│   ├── benchmark.py                # Core execution engine running deterministic inference loops
+│   ├── benchmark.py                # CLI execution engine running deterministic inference loops
 │   ├── evaluation.py               # Scoring engine calculating token overlap and exact match accuracy
 │   └── failure_analysis.py         # Failure taxonomy classifier assigning structured error codes
-├── requirements.txt                # Python dependencies (llama-cpp-python, pandas, numpy, tqdm)
+├── requirements.txt                # Python dependencies (llama-cpp-python, pandas, numpy, fastapi, etc.)
 └── README.md                       # Project documentation
 ```
 
@@ -154,14 +163,21 @@ mkdir -p models
 # Place llama-2-7b.Q4_K_M.gguf and mistral-7b-v0.1.Q4_K_M.gguf inside models/
 ```
 
-### 3. Running the Benchmarking Pipeline
-Execute the deterministic inference loop across all task datasets (`data/*.jsonl`):
+### 3. Interactive Web UI Testing (New)
+To test the models interactively with real-time latency and taxonomy grading, start the FastAPI server:
 ```bash
-python src/benchmark.py
+python api/main.py
+```
+Then navigate to `http://localhost:8000` in your browser.
+
+### 4. Running the CLI Benchmarking Pipeline
+Execute the deterministic inference loop across all task datasets dynamically (`data/*.jsonl`):
+```bash
+python src/benchmark.py --model mistral --task summarization
 ```
 *Outputs raw inference logs, exact token counts, and completion timing directly to `results/raw_outputs.jsonl`.*
 
-### 4. Evaluating Metrics & Generating Failure Analysis
+### 5. Evaluating Metrics & Generating Failure Analysis
 Run the quantitative scoring engine and the automated failure taxonomy classifier:
 ```bash
 # Calculate token overlap accuracy and exact match scores

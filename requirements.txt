@@ -2,3 +2,6 @@ llama-cpp-python
 pandas
 tqdm
 numpy
+fastapi
+uvicorn
+pydantic
